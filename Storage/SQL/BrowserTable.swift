@@ -17,6 +17,7 @@ let TableBookmarksMirrorStructure = "bookmarksMirrorStructure"         // Added 
 
 let TableFavicons = "favicons"
 let TableHistory = "history"
+let TableTopSites = "top_sites"
 let TableDomains = "domains"
 let TableVisits = "visits"
 let TableFaviconSites = "favicon_sites"
@@ -38,6 +39,7 @@ private let AllTables: Args = [
 
     TableHistory,
     TableVisits,
+    TableTopSites,
 
     TableBookmarks,
     TableBookmarksMirror,
@@ -147,6 +149,27 @@ public class BrowserTable: Table {
             "should_upload TINYINT NOT NULL, " +  // Boolean. Set when changed or visits added.
             (version > 5 ? "domain_id INTEGER REFERENCES \(TableDomains)(id) ON DELETE CASCADE, " : "") +
             "CONSTRAINT urlOrDeleted CHECK (url IS NOT NULL OR is_deleted = 1)" +
+            ")"
+    }
+
+    func getTopSitesTableCreationString(forVersion version: Int = BrowserTable.DefaultVersion) -> String? {
+        return "CREATE TABLE IF NOT EXISTS \(TableTopSites) (" +
+            "historyID INTEGER, " +
+            "url TEXT NOT NULL, " +
+            "title TEXT NOT NULL, " +
+            "guid TEXT NOT NULL UNIQUE, " +
+            "domain_id INTEGER, " +
+            "domain TEXT NO NULL, " +
+            "localVisitDate REAL, " +
+            "remoteVisitDate REAL, " +
+            "visitCount INTEGER, " +
+            "iconID INTEGER, " +
+            "iconURL TEXT, " +
+            "iconDate REAL, " +
+            "iconType INTEGER, " +
+            "iconWidth INTEGER, " +
+            "iconHeight INTEGER, " +
+            "frecency REAL"
             ")"
     }
 

@@ -66,22 +66,28 @@ func simulatedFrecency(now: MicrosecondTimestamp, then: MicrosecondTimestamp, vi
 
 // The constants in these functions were arrived at by utterly unscientific experimentation.
 
-func getRemoteFrecencySQL() -> String {
+func getRemoteFrecencySQL(now: Timestamp = NSDate.nowMicroseconds()) -> String {
     let visitCountExpression = "remoteVisitCount"
-    let now = NSDate.nowMicroseconds()
     let microsecondsPerDay = 86_400_000_000.0      // 1000 * 1000 * 60 * 60 * 24
     let ageDays = "((\(now) - remoteVisitDate) / \(microsecondsPerDay))"
 
     return "\(visitCountExpression) * max(1, 100 * 110 / (\(ageDays) * \(ageDays) + 110))"
 }
 
-func getLocalFrecencySQL() -> String {
+func getLocalFrecencySQL(now: Timestamp = NSDate.nowMicroseconds()) -> String {
     let visitCountExpression = "((2 + localVisitCount) * (2 + localVisitCount))"
-    let now = NSDate.nowMicroseconds()
     let microsecondsPerDay = 86_400_000_000.0      // 1000 * 1000 * 60 * 60 * 24
     let ageDays = "((\(now) - localVisitDate) / \(microsecondsPerDay))"
 
     return "\(visitCountExpression) * max(2, 100 * 225 / (\(ageDays) * \(ageDays) + 225))"
+}
+
+func getApproxRemoteFrecencySQL() -> String {
+    return getRemoteFrecencySQL()
+}
+
+func getApproxLocalFrecencySQL() -> String {
+    return getLocalFrecencySQL()
 }
 
 extension SDRow {
@@ -262,6 +268,12 @@ extension SQLiteHistory: BrowserHistory {
 
     public func getSitesByLastVisit(limit: Int) -> Deferred<Maybe<Cursor<Site>>> {
         return self.getFilteredSitesByVisitDateWithLimit(limit, whereURLContains: nil, includeIcon: true)
+    }
+
+    public func getTopSitesForToday() -> Deferred<Maybe<Cursor<Site>>> {
+        let sql = "SELECT * FROM (\(TableTopSites)) ORDER BY frecencies DESC"
+        let factory = SQLiteHistory.iconHistoryColumnFactory
+        return db.runQuery(sql, args: [], factory: factory)
     }
 
     private class func basicHistoryColumnFactory(row: SDRow) -> Site {
